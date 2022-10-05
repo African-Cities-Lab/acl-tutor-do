@@ -1,0 +1,55 @@
+# Based on mcdaniel's https://github.com/openedx-actions/tutor-k8s-init
+name: tutor init
+description: Github Action to configure ubuntu environment for tutor build & deploy workflows
+branding:
+  icon: 'cloud'
+  color: 'orange'
+inputs:
+  tutor-version:
+    description: 'The version of tutor to install'
+    required: false
+    default: latest
+
+runs:
+  using: "composite"
+  steps:
+    - name: actions/checkout
+      uses: actions/checkout@v3.0.2
+
+    # - name: configure kubectl
+    #   shell: bash
+    #   run: |-
+    #     sudo snap install kubectl --chanel=1.23/stable --classic
+    #     doctl kubernetes cluster kubeconfig save ${{ env.CLUSTER_NAME }}
+    #     echo "kubectl version and diagnostic info:"
+    #     echo "------------------------------------"
+    #     kubectl version --short --v=9
+
+    - name: install tutor requirements
+      shell: bash
+      run: |-
+        sudo apt install python3 python3-pip libyaml-dev
+
+    - name: install tutor (with discovery plugin)
+      shell: bash
+      run: |-
+        pip install --upgrade pyyaml
+        pip install tutor${{ inputs.tutor-version != 'latest' && format('=={0}', inputs.tutor-version) || '' }}
+        pip install tutor-discovery
+        tutor plugins enable discovery
+        tutor config save
+        echo "TUTOR_VERSION=$(tutor --version | cut -f3 -d' ')" >> $GITHUB_ENV
+        echo tutor root: $(tutor config printroot)
+
+    - name: load tutor settings
+      shell: bash
+      run: |-
+        echo "TUTOR_RUN_CADDY=false" >> $GITHUB_ENV
+        echo "TUTOR_RUN_NGINX=false" >> $GITHUB_ENV
+
+    # - name: load additional tutor environment specific settings
+    #   if: ${{ inputs.eks-namespace != 'UNASSIGNED' }}
+    #   shell: bash
+    #   run: |-
+    #     echo "TUTOR_ID=tutor-${{ inputs.eks-namespace }}" >> $GITHUB_ENV
+    #     echo "TUTOR_K8S_NAMESPACE=${{ inputs.eks-namespace }}" >> $GITHUB_ENV

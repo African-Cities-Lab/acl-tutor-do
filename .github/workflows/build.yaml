@@ -1,0 +1,53 @@
+name: build openedx container
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: initialize environment
+        uses: ./.github/actions/tutor-init
+
+      - name: add custom theme
+        uses: openedx-actions/tutor-plugin-build-openedx-add-theme@v1.0.0
+        with:
+          repository: acl-openedx-theme
+          repository-organization: African-Cities-Lab
+          repository-ref: main
+          repository-token: ${{ secrets.GITHUB_TOKEN }}
+
+      #------------------------------------------------------------------------
+      # Add any Python requirements here.
+      # These include:
+      # - generic Python PyPi packages
+      # - Xblocks
+      # - Open edX Plugin(s)
+      # - your own custom repos
+      #
+      # note that `repository-token` is optional and is only needed for
+      # private repositories
+      #------------------------------------------------------------------------
+      # - name: Add an edx plugin
+      #   uses: openedx-actions/tutor-plugin-build-openedx-add-requirement@v1.0.0
+      #   with:
+      #     repository: openedx-plugin-example
+      #     repository-organization: lpm0073
+      #     repository-ref: main
+
+      # - name: Add an Xblock
+      #   uses: openedx-actions/tutor-plugin-build-openedx-add-requirement@v1.0.0
+      #   with:
+      #     repository: edx-ora2
+      #     repository-organization: openedx
+      #     repository-ref: master
+
+      - name: build openedx
+        uses: ./.github/actions/tutor-build
+        with:
+          do-token: ${{ secrets.DO_TOKEN }}
+          do-registry-name: ${{ secrets.DO_REGISTRY_NAME }}

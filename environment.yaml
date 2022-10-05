@@ -1,0 +1,9 @@
+name: doge
+channels:
+  - conda-forge
+dependencies:
+  - git[version='>=2.28']
+  - make
+  - pre-commit
+  - terraform
+  - gh

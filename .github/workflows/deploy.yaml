@@ -1,0 +1,249 @@
+name: deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      # common settings
+      # --------------------------------------------
+      DEBUG_MODE: false
+      DO_REGION: ${{ secrets.DO_REGION }}
+
+      # environment settings
+      # --------------------------------------------
+      ENVIRONMENT_ID: {{ cookiecutter.environment_name }}
+      NAMESPACE: {{ cookiecutter.global_platform_name }}-{{ cookiecutter.global_platform_region }}-{{ cookiecutter.environment_name }}
+      EKS_CLUSTER_NAME: {{ cookiecutter.global_platform_name }}-{{ cookiecutter.global_platform_region }}-{{ cookiecutter.global_platform_shared_resource_identifier }}
+      S3_BUCKET_PREFIX: {{ cookiecutter.global_platform_name }}-{{ cookiecutter.global_platform_region }}-{{ cookiecutter.environment_name }}
+
+      # feature flags for optional tutor modules
+      # --------------------------------------------
+      ENABLE_S3: true
+      ENABLE_BACKUP: false
+      {% if cookiecutter.ci_deploy_install_credentials_server == "Y" -%}
+      ENABLE_CREDENTIALS: true
+      {% else -%}
+      ENABLE_CREDENTIALS: false
+      {% endif -%}
+      {% if cookiecutter.ci_deploy_install_discovery_service == "Y" %}
+      ENABLE_DISCOVERY: true
+      {% else -%}
+      ENABLE_DISCOVERY: false
+      {% endif -%}
+      {% if cookiecutter.ci_deploy_install_ecommerce_service == "Y" %}
+      ENABLE_ECOMMERCE: true
+      {% else -%}
+      ENABLE_ECOMMERCE: false
+      {% endif -%}
+      {% if cookiecutter.ci_deploy_install_forum_service == "Y" %}
+      ENABLE_FORUM: true
+      {% else -%}
+      ENABLE_FORUM: false
+      {% endif -%}
+      {% if cookiecutter.ci_deploy_install_mfe_service == "Y" -%}
+      ENABLE_MFE: true
+      {% else -%}
+      ENABLE_MFE: false
+      {% endif -%}
+      {% if cookiecutter.ci_deploy_install_notes_service == "Y" -%}
+      ENABLE_NOTES: true
+      {% else -%}
+      ENABLE_NOTES: false
+      {% endif -%}
+      {% if cookiecutter.ci_deploy_install_xqueue_service == "Y" -%}
+      ENABLE_XQUEUE: true
+      {% else -%}
+      ENABLE_XQUEUE: false
+      {% endif -%}
+      {% if cookiecutter.ci_deploy_install_license_manager_service == "Y" -%}
+      ENABLE_LICENSE_MANAGER: true
+      {% else %}
+      ENABLE_LICENSE_MANAGER: false
+      {% endif %}
+
+    # deployment workflow begins here
+    # --------------------------------------------
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: configure DO credentials
+
+      - name: initialize environment
+        uses: ./.github/actions/tutor-init
+
+      # Setup a connection to our AWS Elastic Container Registry so that we can pull
+      # containers that we created with the build workflows in this Cookiecutter.
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@{{ cookiecutter.ci_actions_amazon_ecr_login_version }}
+
+      # ---------------------------------------------------------------------------------
+      # initialize workflow environment variables
+      # ---------------------------------------------------------------------------------
+      - name: Intialize AWS_ECR_URI
+        shell: bash
+        run: |-
+          echo "AWS_ECR_URI={% raw %}${{ steps.login-ecr.outputs.registry }}{% endraw %}" >> $GITHUB_ENV
+      - name: Intialize AWS ECR repo URIs
+        shell: bash
+        run: |-
+          echo "AWS_ECR_REPOSITORY_BACKUP=${AWS_ECR_URI}/openedx_backup:latest" >> $GITHUB_ENV
+          echo "AWS_ECR_REPOSITORY_CREDENTIALS=${AWS_ECR_URI}/openedx_credentials:latest" >> $GITHUB_ENV
+          echo "AWS_ECR_REPOSITORY_LICENSE_MANAGER=${AWS_ECR_URI}/license_manager:latest" >> $GITHUB_ENV
+          echo "AWS_ECR_REPOSITORY_MFE=${AWS_ECR_URI}/openedx_mfe:latest" >> $GITHUB_ENV
+          echo "AWS_ECR_REPOSITORY_OPENEDX=${AWS_ECR_URI}/openedx:latest" >> $GITHUB_ENV
+      - name: Load environment specific settings (direct)
+        shell: bash
+        run: |-
+          # Pin the instalation ID with the Kubernetes namespace. It needs to be unique and static per instalation.
+          cat ci/tutor-deploy/environments/${{ env.ENVIRONMENT_ID }}/config.yml >> $GITHUB_ENV
+      # note that values like $LMS_HOSTNAME come from this repo
+      # in /ci/tutor-deploy/environments/{{ cookiecutter.environment_name }}/config.yml
+      - name: Load additional environment specific settings
+        shell: bash
+        run: |-
+          echo "TUTOR_LMS_HOST=$LMS_HOSTNAME" >> $GITHUB_ENV
+          echo "TUTOR_CMS_HOST=$CMS_HOSTNAME" >> $GITHUB_ENV
+          echo "TUTOR_DOCKER_IMAGE_OPENEDX=${AWS_ECR_REPOSITORY_OPENEDX}" >> $GITHUB_ENV
+          echo "OPENEDX_COMMON_VERSION=open-release/{{ cookiecutter.ci_build_open_edx_version }}" >> $GITHUB_ENV
+
+      # ---------------------------------------------------------------------------------
+      # Configure optional tutor plugins
+      # ---------------------------------------------------------------------------------
+      # - name: enable tutor plugin - discovery
+      #   uses: openedx-actions/tutor-plugin-enable-discovery@v1.0.0
+      #   with:
+      #     namespace: ${{ env.NAMESPACE }}
+
+      - name: Enable tutor plugin - Credentials
+        uses: openedx-actions/tutor-plugin-enable-credentials@{{ cookiecutter.ci_openedx_actions_tutor_plugin_enable_credentials_version }}
+        if: {% raw %}${{ env.ENABLE_CREDENTIALS == 'true' }}{% endraw %}
+        with:
+          version: {{ cookiecutter.ci_deploy_tutor_plugin_credentials_version }}
+          namespace: {% raw %}${{ env.NAMESPACE }}{% endraw %}
+          aws-ecr-uri: ${AWS_ECR_REPOSITORY_CREDENTIALS}
+          common-logo-url: {{ cookiecutter.global_platform_logo_url }}
+
+      - name: Enable tutor plugin - Xqueue
+        uses: openedx-actions/tutor-plugin-enable-xqueue@{{ cookiecutter.ci_openedx_actions_tutor_plugin_enable_xqueue_version }}
+        if: {% raw %}${{ env.ENABLE_XQUEUE == 'true' }}{% endraw %}
+        with:
+          namespace: {% raw %}${{ env.NAMESPACE }}{% endraw %}
+
+      - name: Enable tutor plugin - Notes
+        uses: openedx-actions/tutor-plugin-enable-notes@{{ cookiecutter.ci_openedx_actions_tutor_plugin_enable_notes_version }}
+        if: {% raw %}${{ env.ENABLE_NOTES == 'true' }}{% endraw %}
+        with:
+          namespace: {% raw %}${{ env.NAMESPACE }}{% endraw %}
+
+      - name: Enable tutor plugin - Ecommerce
+        uses: openedx-actions/tutor-plugin-enable-ecommerce@{{ cookiecutter.ci_openedx_actions_tutor_plugin_enable_ecommerce_version }}
+        if: {% raw %}${{ env.ENABLE_ECOMMERCE == 'true' }}{% endraw %}
+        with:
+          namespace: {% raw %}${{ env.NAMESPACE }}{% endraw %}
+          secrets-s3-bucket-name: {% raw %}${{ env.S3_BUCKET_PREFIX }}{% endraw %}-secrets
+          currency: USD
+          enabled-payment-processors: '["stripe", "paypal"]'
+
+      - name: Enable tutor plugin - Forum
+        uses: openedx-actions/tutor-plugin-enable-forum@{{ cookiecutter.ci_openedx_actions_tutor_plugin_enable_forum_version }}
+        if: {% raw %}${{ env.ENABLE_FORUM == 'true' }}{% endraw %}
+
+      - name: Enable tutor plugin - License Manager
+        uses: openedx-actions/tutor-enable-plugin-license-manager@{{ cookiecutter.ci_openedx_actions_tutor_plugin_enable_license_manager_version }}
+        if: {% raw %}${{ env.ENABLE_LICENSE_MANAGER == 'true' }}{% endraw %}
+        with:
+          namespace: {% raw %}${{ env.NAMESPACE }}{% endraw %}
+          aws-ecr-uri: ${AWS_ECR_REPOSITORY_LICENSE_MANAGER}
+          host: subscriptions.{{ cookiecutter.environment_subdomain }}.{{ cookiecutter.global_root_domain }}
+          lms_host: {{ cookiecutter.environment_subdomain }}.{{ cookiecutter.global_root_domain }}
+
+      # ---------------------------------------------------------------------------------
+      # Configure backend services
+      # ---------------------------------------------------------------------------------
+      - name: Configure SMTP
+        uses: openedx-actions/tutor-k8s-configure-smtp@{{ cookiecutter.ci_openedx_actions_tutor_k8s_configure_smtp_version }}
+        with:
+          aws-ses-iam-key: {% raw %}${{ secrets.AWS_SES_IAM_KEY }}{% endraw %}
+          aws-ses-iam-secret: {% raw %}${{ secrets.AWS_SES_IAM_SECRET }}{% endraw %}
+          aws-region: {% raw %}${{ env.AWS_REGION }}{% endraw %}
+
+      - name: Configure Redis
+        uses: openedx-actions/tutor-k8s-configure-redis@{{ cookiecutter.ci_openedx_actions_tutor_k8s_configure_redis_version }}
+        with:
+          namespace: {% raw %}${{ env.NAMESPACE }}{% endraw %}
+
+      - name: Configure MySQL
+        uses: openedx-actions/tutor-k8s-configure-mysql@{{ cookiecutter.ci_openedx_actions_tutor_k8s_configure_mysql_version }}
+        with:
+          namespace: {% raw %}${{ env.NAMESPACE }}{% endraw %}
+
+      - name: Configure MongoDB
+        uses: openedx-actions/tutor-k8s-configure-mongodb@{{ cookiecutter.ci_openedx_actions_tutor_k8s_configure_mongodb_version }}
+        with:
+          namespace: {% raw %}${{ env.NAMESPACE }}{% endraw %}
+          {% if cookiecutter.stack_add_remote_mongodb == "Y" -%}
+          remote-server: "true"
+          {% elif cookiecutter.stack_add_remote_mongodb == "N" -%}
+          remote-server: "false"
+          {% endif %}
+
+      # ---------------------------------------------------------------------------------
+      # Configure application secrets
+      # ---------------------------------------------------------------------------------
+      - name: Fetch JWT token
+        uses: openedx-actions/tutor-k8s-configure-jwt@{{ cookiecutter.ci_openedx_actions_tutor_k8s_configure_jwt_version }}
+        with:
+          namespace: {% raw %}${{ env.NAMESPACE }}{% endraw %}
+
+
+      # see: https://github.com/{{ cookiecutter.github_account_name }}/openedx_devops/blob/main/terraform/modules/kubernetes_secrets/main.tf
+      - name: Configure edx secret
+        uses: openedx-actions/tutor-k8s-configure-edx-secret@{{ cookiecutter.ci_openedx_actions_tutor_k8s_configure_edx_secret_version }}
+        with:
+          namespace: {% raw %}${{ env.NAMESPACE }}{% endraw %}
+
+      # ---------------------------------------------------------------------------------
+      # Add your custom configuration tasks here ....
+      # ---------------------------------------------------------------------------------
+      - name: Disable LMS courseware micro front-end app
+        uses: openedx-actions/tutor-plugin-configure-courseware-mfe@{{ cookiecutter.ci_openedx_actions_tutor_plugin_configure_courseware_mfe_version }}
+        with:
+          enabled: 'false'
+
+      - name: Configure 3rd Party Authentication
+        shell: bash
+        run:  |-
+          tutor config save --set OPENEDX_FACEBOOK_APP_ID="{% raw %}${{ inputs.facebook-app-id }}{% endraw %}" \
+                            --set OPENEDX_FACEBOOK_APP_SECRET="{% raw %}${{ inputs.facebook-app-secret }}{% endraw %}"
+      - name: Dump tutor config
+        uses: openedx-actions/tutor-print-dump@{{ cookiecutter.ci_openedx_actions_tutor_print_dump }}
+
+      # ---------------------------------------------------------------------------------
+      # Deploy
+      # ---------------------------------------------------------------------------------
+      - name: Add tutor k8s-specific deployment tasks
+        uses: openedx-actions/tutor-plugin-enable-k8s-deploy-tasks@{{ cookiecutter.ci_openedx_actions_tutor_plugin_enable_k8s_deploy_tasks_version }}
+
+      - name: Deploy to Kubernetes
+        uses: ./.github/actions/tutor/k8s/deploy
+        with:
+          environment-id: {% raw %}${{ env.ENVIRONMENT_ID }}{% endraw %}
+          namespace: {% raw %}${{ env.NAMESPACE }}{% endraw %}
+
+      - name: Set theme
+        shell: bash
+        run:  |-
+          tutor k8s settheme edx-theme
+      - name: Create admin user
+        uses: openedx-actions/tutor-k8s-configure-edx-admin@{{ cookiecutter.ci_openedx_actions_tutor_k8s_configure_edx_admin }}
+        with:
+          namespace: {% raw %}${{ env.NAMESPACE }}{% endraw %}
+
+      - name: Summary
+        shell: bash
+        run: kubectl get hpa

@@ -1,0 +1,38 @@
+# Config for Dependabot updates. See Documentation here:
+# https://help.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+  # Update GitHub actions in workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    # Check for updates to GitHub Actions every weekday
+    schedule:
+      interval: "daily"
+
+  # Enable version updates for Docker
+  # We need to specify each Dockerfile in a separate entry because Dependabot doesn't
+  # support wildcards or recursively checking subdirectories. Check this issue for updates:
+  # https://github.com/dependabot/dependabot-core/issues/2178
+  - package-ecosystem: "docker"
+    # Look for a `Dockerfile` in the `app` directory
+    directory: "app/"
+    # Check for updates to GitHub Actions every weekday
+    schedule:
+      interval: "daily"
+
+  # Enable version updates for Python/Pip - Production
+  - package-ecosystem: "pip"
+    # Look for a `requirements.txt` in the `app` directory
+    # also 'setup.cfg', 'runtime.txt' and 'requirements/*.txt'
+    directory: "app/"
+    # Check for updates to GitHub Actions every weekday
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "terraform"
+    # Look for `.tf` files in the `terraform` directory
+    directory: "terraform/"
+    # Check for updates to GitHub Actions every weekday
+    schedule:
+      interval: "daily"
