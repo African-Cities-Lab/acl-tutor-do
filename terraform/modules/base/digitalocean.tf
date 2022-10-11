@@ -16,8 +16,3 @@ resource "digitalocean_project" "do_project" {
   name        = var.do_project_name
   description = var.do_project_description
 }
-
-resource "digitalocean_container_registry" "registry" {
-  name                   = var.do_project_name
-  subscription_tier_slug = "starter"
-}

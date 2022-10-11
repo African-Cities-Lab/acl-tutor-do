@@ -15,24 +15,11 @@ data "github_repository" "repo" {
 
 
 ## Secrets
-resource "github_actions_secret" "do_token" {
-  repository      = data.github_repository.repo.name
-  secret_name     = "do_token"
-  plaintext_value = var.do_token
-}
-
 resource "github_actions_secret" "tf_api_token" {
   repository      = data.github_repository.repo.name
   secret_name     = "tf_api_token"
   plaintext_value = var.tf_api_token
 }
-
-resource "github_actions_secret" "do_registry_name" {
-  repository      = data.github_repository.repo.name
-  secret_name     = "do_registry_name"
-  plaintext_value = digitalocean_container_registry.registry.name
-}
-
 
 resource "github_actions_secret" "ssh_key" {
   repository      = data.github_repository.repo.name

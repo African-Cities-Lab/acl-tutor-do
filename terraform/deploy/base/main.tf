@@ -7,6 +7,5 @@ module "base" {
   do_project_name        = var.do_project_name
   do_project_description = var.do_project_description
   gh_repo_name           = var.gh_repo_name
-  do_token               = var.do_token
   tf_api_token           = var.tf_api_token
 }

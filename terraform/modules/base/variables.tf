@@ -28,11 +28,6 @@ variable "gh_repo_name" {
   type        = string
 }
 
-variable "do_token" {
-  description = "DigitalOcean token."
-  type        = string
-}
-
 variable "tf_api_token" {
   description = "Token used to authenticate with Terraform Cloud/Enterprise."
   type        = string
