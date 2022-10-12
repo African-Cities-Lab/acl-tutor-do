@@ -9,4 +9,7 @@ module "base" {
   domain_name            = var.domain_name
   gh_repo_name           = var.gh_repo_name
   tf_api_token           = var.tf_api_token
+  smtp_password          = var.smtp_password
+  tutor_admin_password   = var.tutor_admin_password
+  tutor_admin_user       = var.tutor_admin_user
 }

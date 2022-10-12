@@ -25,12 +25,30 @@ packages:
   - unattended-upgrades
 
 runcmd:
+  # install docker
   - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
   - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
   - apt-get update -y
   - apt-get install -y docker-ce docker-ce-cli containerd.io
   - systemctl start docker
   - systemctl enable docker
+  # install docker-compose
   - curl -L "https://github.com/docker/compose/releases/download/v${docker_compose_version}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
   - chmod +x /usr/local/bin/docker-compose
   - curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh"
+  # install other tutor requirements
+  - apt install python3 python3-pip libyaml-dev
+  - pip install --upgrade pyyaml
+  # install tutor and plugins
+  - pip install tutor tutor-discovery tutor-xqueue tutor-forum
+  - tutor plugins enable discovery
+  - tutor plugins enable xqueue
+  - tutor plugins enable forum
+  - tutor config save
+  # start tutor
+  - tutor local start -d
+  # servicie initialization
+  - tutor local init
+  # TODO: create super user (how to hide password from cloud-init logs?)
+  # enable multi language support
+  - tutor local run lms ./manage.py lms shell -c "from openedx.core.djangoapps.dark_lang.models import DarkLangConfig; DarkLangConfig.objects.create(enabled=True, released_languages='fr,en')"

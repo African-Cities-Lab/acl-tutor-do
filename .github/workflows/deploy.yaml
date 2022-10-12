@@ -4,16 +4,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  deploy-stage:
     runs-on: ubuntu-latest
+    environment: stage
     env:
-      # common settings
-      # --------------------------------------------
-      DEBUG_MODE: false
-
-      # environment settings
-      # --------------------------------------------
       ENVIRONMENT_ID: stage
+      REGISTRY_URL: ghcr.io
+      IMAGE_NAME: openedx
+      SMTP_EMAIL: contact@africancitieslab.org
 
     # deployment workflow begins here
     # --------------------------------------------
@@ -21,112 +19,121 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
 
-      - name: initialize environment
-        uses: ./.github/actions/tutor-init
+      # - name: initialize environment
+      #   uses: ./.github/actions/tutor-init
 
       # ---------------------------------------------------------------------------------
       # initialize workflow environment variables
       # ---------------------------------------------------------------------------------
-      - name: load environment specific settings (direct)
-        shell: bash
-        run: |
-          cat ci/tutor-deploy/envs/${{ env.ENVIRONMENT_ID }}/config.yml >> $GITHUB_ENV
-
-      # note that values like $LMS_HOSTNAME come from this repo
-      # in /ci/tutor-deploy/envs/<environment-name>/config.yml
-      - name: load additional environment specific settings
-        shell: bash
-        run: |-
-          echo "TUTOR_LMS_HOST=$LMS_HOSTNAME" >> $GITHUB_ENV
-          echo "TUTOR_CMS_HOST=$CMS_HOSTNAME" >> $GITHUB_ENV
-          echo "DOCKER_IMAGE_OPENEDX=ghcr.io/openedx:latest" >> $GITHUB_ENV
-          echo "OPENEDX_COMMON_VERSION=open-release/nutmeg.2" >> $GITHUB_ENV
-
-      # ---------------------------------------------------------------------------------
-      # Configure optional tutor plugins
-      # ---------------------------------------------------------------------------------
-      # - name: enable tutor plugin - discovery
-      #   uses: openedx-actions/tutor-plugin-enable-discovery@v1.0.0
-      #   with:
-      #     namespace: ${{ env.NAMESPACE }}
-
-      # ACHTUNG: discovery plugin is already enabled in `tutor-init` action
-      # - name: Enable the Discovery plugin
+      # - name: load environment specific settings (direct)
       #   shell: bash
       #   run: |
-      #     pip install tutor-discovery
-      #     tutor plugins enable discovery
-      #     tutor config save
+      #     cat ci/tutor-deploy/envs/${{ env.ENVIRONMENT_ID }}/config.yml >> $GITHUB_ENV
 
-      - name: enable the xqueue plugin
-        id: save-config
+      # - name: copy file via ssh password
+      #   uses: appleboy/scp-action@v0.1.3
+      #   with:
+      #     host: ${{ secrets.DROPLET_HOST }}
+      #     username: ${{ secrets.DROPLET_USER }}
+      #     key: ${{ secrets.SSH_KEY }}
+      #     source: "ci/tutor-deploy/envs/${{ env.ENVIRONMENT_ID }}/config.yml"
+      #     target: "config.yml"
+
+      - name: load environment specific settings
         shell: bash
-        run: |
-          pip install tutor-xqueue
-          tutor plugins enable xqueue
-          tutor config save
+        run: |-
+          # echo "TUTOR_LMS_HOST=$LMS_HOSTNAME" >> $GITHUB_ENV
+          # echo "TUTOR_CMS_HOST=$CMS_HOSTNAME" >> $GITHUB_ENV
+          # TODO: DRY this
+          echo "TUTOR_LMS_HOST=courses-staging.africancitieslab.org" >> $GITHUB_ENV
+          echo "TUTOR_CMS_HOST=studio.courses-staging.africancitieslab.org" >> $GITHUB_ENV
+          echo "DOCKER_IMAGE_OPENEDX=${{ env.REGISTRY_URL }}/${{ github.actor }}/${{ env.IMAGE_NAME }}" >> $GITHUB_ENV
+          # echo "OPENEDX_COMMON_VERSION=open-release/nutmeg.2" >> $GITHUB_ENV
 
-      - name: configure discussion forum
-        shell: bash
-        run: |
-          pip install tutor-forum
-          tutor plugins enable forum
-          tutor config save
-
-      # ---------------------------------------------------------------------------------
-      # Configure backend services
-      # ---------------------------------------------------------------------------------
-      - name: configure SMTP
-        shell: bash
-        run: |
-          tutor config save --set SMTP_HOST=smtp.porkbun.com --set SMTP_PORT=587 \
-              --set SMTP_USE_SSL=false --set SMTP_USE_TLS=true \
-              --set SMTP_USERNAME=${SMTP_EMAIL} --set SMTP_PASSWORD=${SMTP_PASSWORD}
-        env:
-          SMTP_EMAIL: contact@africancitieslab.org
-          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-
-      - name: increase web server capacity
-        shell: bash
-        run: |
-          tutor config save \
-              --set OPENEDX_LMS_UWSGI_WORKERS=8 \
-              --set OPENEDX_CMS_UWSGI_WORKERS=4
-
-      # ---------------------------------------------------------------------------------
-      # Add your custom configuration tasks here ....
-      # ---------------------------------------------------------------------------------
-      - name: Dump tutor config
-        uses: openedx-actions/tutor-print-dump@v1.0.0
-
-      - name: Copy tutor config file to droplet
-
-      # ---------------------------------------------------------------------------------
-      # Deploy
-      # ---------------------------------------------------------------------------------
-      - name: deploy tutor
-        uses: ./.github/actions/tutor-deploy
+      - name: install SSH key
+        uses: shimataro/ssh-key-action@v2
         with:
-          environment-id: ${{ env.ENVIRONMENT_ID }}
+          key: ${{ secrets.SSH_KEY }}
+          known_hosts: unnecessary
+          if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
 
-      - name: enable multiple language support
-        shell: bash
-        run: |
-          tutor local run lms ./manage.py lms shell -c \
-              "from openedx.core.djangoapps.dark_lang.models import DarkLangConfig; DarkLangConfig.objects.create(enabled=True, released_languages='fr,en')"
+      - name: add known hosts
+        run: ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> ~/.ssh/known_hosts
 
-      - name: set theme
-        shell: bash
-        run: |
-          tutor local settheme acl-indigo-theme
+      - name: config DigitalOcean droplet via SSH action
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          envs: TUTOR_LMS_HOST,TUTOR_CMS_HOST,DOCKER_IMAGE_OPENEDX,SMTP_EMAIL,${{ secrets.SMTP_PASSWORD }}
+          script: |
+            # add tutor dir to path
+            PATH=$PATH:~/.local/bin
+            # config backend variables
+            tutor config save \
+                --set LMS_HOSTNAME=${TUTOR_LMS_HOST} \
+                --set CMS_HOSTNAME=${TUTOR_CMS_HOST} \
+                --set ENABLE_HTTPS=true \
+                --set DOCKER_IMAGE_OPENEDX=${DOCKER_IMAGE_OPENEDX} \
+                --set OPENEDX_COMMON_VERSION=open-release/nutmeg.2 \
+                --set SMTP_HOST=smtp.porkbun.com \
+                --set SMTP_PORT=587 \
+                --set SMTP_USE_SSL=false \
+                --set SMTP_USE_TLS=true \
+                --set SMTP_USERNAME=${SMTP_EMAIL} \
+                --set SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }} \
+                --set OPENEDX_LMS_UWSGI_WORKERS=8 \
+                --set OPENEDX_CMS_UWSGI_WORKERS=4
+            # set theme
+            tutor local settheme acl-indigo-theme
 
-      - name: Create admin user
-        id: create-user
-        shell: bash
-        run: |
-          tutor local createuser --password "${TUTOR_ADMIN_PASSWORD}" \
-              --staff --superuser "${TUTOR_ADMIN_USER}" "${TUTOR_ADMIN_EMAIL}"
-        env:
-          TUTOR_ADMIN_PASSWORD: ${{ secrets.TUTOR_ADMIN_PASSWORD }}
-          TUTOR_ADMIN_USER: ${{ secrets.TUTOR_ADMIN_USER }}
-          TUTOR_ADMIN_EMAIL: contact@africancitieslab.org
+      - name: print config from DigitalOcean droplet via SSH action
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # add tutor dir to path
+            PATH=$PATH:~/.local/bin
+            # pip env
+            echo 'pip list:'
+            echo '-------------------------------------'
+            pip list
+            # tutor config apps folder
+            echo 'apps:'
+            echo '-------------------------------------'
+            ls $(tutor config printroot)/env/apps -lha
+            # tutor config plugins folder
+            if [ ! -d "$(tutor config printroot)/env/plugins" ]; then
+              echo "No plugins installed."
+              exit
+            fi
+            echo 'plugins:'
+            echo '-------------------------------------'
+            ls $(tutor config printroot)/env/plugins -lha
+            # tutor config.yml
+            echo 'config.yml:'
+            echo '-------------------------------------'
+            cat -n $(tutor config printroot)/config.yml
+            # tutor lms.env.yml
+            echo 'lms.env.yml:'
+            echo '-------------------------------------'
+            cat -n $(tutor config printroot)/env/apps/openedx/config/lms.env.yml
+            # tutor cms.env.yml
+            echo 'cms.env.yml:'
+            echo '-------------------------------------'
+            cat -n $(tutor config printroot)/env/apps/openedx/config/cms.env.yml
+
+      - name: deploy tutor via SSH action
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # add tutor dir to path
+            PATH=$PATH:~/.local/bin
+            # start
+            tutor local start -d

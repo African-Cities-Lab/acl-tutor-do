@@ -12,48 +12,77 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: set environment variables
-      shell: bash
-      run: |
-        echo "CONFIG_PATH=$(tutor config printroot)/env/apps/openedx/config" >> $GITHUB_ENV
+    - name: config DigitalOcean droplet via SSH action
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.DROPLET_HOST }}
+        username: ${{ secrets.DROPLET_USER }}
+        key: ${{ secrets.SSH_KEY }}
+        envs: LMS_HOSTNAME,CMS_HOSTNAME,DOCKER_IMAGE_OPENEDX,SMTP_EMAIL,${{ secrets.SMTP_PASSWORD }}
+        script: |
+          # add tutor dir to path
+          PATH=$PATH:~/.local/bin
+          # config backend variables
+          tutor config save \
+              --set LMS_HOSTNAME=${LMS_HOSTNAME} \
+              --set CMS_HOSTNAME=${CMS_HOSTNAME} \
+              --set DOCKER_IMAGE_OPENEDX=${DOCKER_IMAGE_OPENEDX} \
+              --set OPENEDX_COMMON_VERSION=open-release/nutmeg.2 \
+              --set SMTP_HOST=smtp.porkbun.com \
+              --set SMTP_PORT=587 \
+              --set SMTP_USE_SSL=false \
+              --set SMTP_USE_TLS=true \
+              --set SMTP_USERNAME=${SMTP_EMAIL} \
+              --set SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }} \
+              --set OPENEDX_LMS_UWSGI_WORKERS=8 \
+              --set OPENEDX_CMS_UWSGI_WORKERS=4
+          # set theme
+          tutor local settheme acl-indigo-theme
 
-    # - name: cat settings_merge.yml
-    #   shell: bash
-    #   run: |
-    #     cat -n $GITHUB_WORKSPACE/ci/tutor-deploy/${{ inputs.environment-id }}/settings_merge.yml
+    - name: print config from DigitalOcean droplet via SSH action
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.DROPLET_HOST }}
+        username: ${{ secrets.DROPLET_USER }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          # pip env
+          echo 'pip list:'
+          echo '-------------------------------------'
+          pip list
+          # tutor config apps folder
+          echo 'apps:'
+          echo '-------------------------------------'
+          ls $(tutor config printroot)/env/apps -lha
+          # tutor config plugins folder
+          if [ ! -d "$(tutor config printroot)/env/plugins" ]; then
+            echo "No plugins installed."
+            exit
+          fi
+          echo 'plugins:'
+          echo '-------------------------------------'
+          ls $(tutor config printroot)/env/plugins -lha
+          # tutor config.yml
+          echo 'config.yml:'
+          echo '-------------------------------------'
+          cat -n $(tutor config printroot)/config.yml
+          # tutor lms.env.yml
+          echo 'lms.env.yml:'
+          echo '-------------------------------------'
+          cat -n $(tutor config printroot)/env/apps/openedx/config/lms.env.yml
+          # tutor cms.env.yml
+          echo 'cms.env.yml:'
+          echo '-------------------------------------'
+          cat -n $(tutor config printroot)/env/apps/openedx/config/cms.env.yml
 
-    # - name: patch lms.env.yml
-    #   shell: bash
-    #   run: |
-    #     cd ${CONFIG_PATH}
-    #     mv lms.env.yml lms.env.yml.orig
-    #     yq ea '. as $item ireduce ({}; . * $item )' lms.env.yml.orig  "$GITHUB_WORKSPACE/ci/tutor-deploy/${{ inputs.environment-id }}/settings_merge.yml" >  lms.env.yml
-
-    # - name: patch cms.env.yml
-    #   shell: bash
-    #   run: |
-    #     cd ${CONFIG_PATH}
-    #     mv cms.env.yml cms.env.yml.orig
-    #     yq ea '. as $item ireduce ({}; . * $item )' cms.env.yml.orig  "$GITHUB_WORKSPACE/ci/tutor-deploy/${{ inputs.environment-id }}/settings_merge.yml" >  cms.env.yml
-
-    # - name: cleanup config folder
-    #   shell: bash
-    #   run: |
-    #     cd ${CONFIG_PATH}
-    #     rm *orig
-
-    - name: dump tutor config
-      uses: openedx-actions/tutor-print-dump@v0.0.3
-
-    #------------------------------------------------------------------------
-    # V. Deploy Open edX
-    #------------------------------------------------------------------------
-    - name: deploy tutor
-      shell: bash
-      run: |
-        tutor local start
-
-    - name: run tutor init
-      shell: bash
-      run: |
-        tutor local init
+    - name: deploy tutor via SSH action
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.DROPLET_HOST }}
+        username: ${{ secrets.DROPLET_USER }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          # add tutor dir to path
+          PATH=$PATH:~/.local/bin
+          # start
+          tutor local start -d

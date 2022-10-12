@@ -33,5 +33,5 @@ resource "digitalocean_record" "cname" {
   domain = data.digitalocean_domain.domain.name
   name   = "*.${var.a_record_name}" # "*.courses"
   type   = "CNAME"
-  value  = "@"
+  value  = "${var.a_record_name}.${var.domain_name}."
 }

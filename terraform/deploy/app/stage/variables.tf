@@ -10,8 +10,6 @@ variable "droplet_region" {}
 
 variable "droplet_size" {}
 
-variable "domain_name" {}
-
 variable "a_record_name" {}
 
 variable "do_token" {}

@@ -4,7 +4,7 @@ resource "digitalocean_ssh_key" "ssh_key" {
 }
 
 data "template_file" "cloud-init-yaml" {
-  template = file("${path.module}/files/cloud-init.yml")
+  template = file("${path.module}/files/cloud-init.yaml")
   vars = {
     user                   = var.droplet_user
     init_ssh_public_key    = tls_private_key.ssh_key.public_key_openssh

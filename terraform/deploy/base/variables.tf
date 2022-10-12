@@ -14,6 +14,12 @@ variable "gh_repo_name" {}
 
 variable "tf_api_token" {}
 
+variable "smtp_password" {}
+
+variable "tutor_admin_password" {}
+
+variable "tutor_admin_user" {}
+
 variable "do_token" {}
 
 variable "gh_token" {}

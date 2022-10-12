@@ -10,6 +10,10 @@ output "do_project_id" {
   value = module.base.do_project_id
 }
 
+output "domain_name" {
+  value = module.base.domain_name
+}
+
 output "gh_repo_name" {
   value = module.base.gh_repo_name
 }

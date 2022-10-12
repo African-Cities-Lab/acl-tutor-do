@@ -6,19 +6,37 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      REGISTRY_URL: ghcr.io
+      IMAGE_NAME: openedx
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: initialize environment
-        uses: ./.github/actions/tutor-init
+      # - name: initialize environment
+      #   uses: ./.github/actions/tutor-init
+      - name: install tutor requirements
+        shell: bash
+        run: |
+          sudo apt install python3 python3-pip libyaml-dev
+
+      - name: install tutor  # (with discovery plugin)
+        shell: bash
+        run: |
+          pip install --upgrade pyyaml
+          pip install tutor
+          # pip install tutor-discovery
+          # tutor plugins enable discovery
+          tutor config save
+          echo tutor root: $(tutor config printroot)
+          echo "TUTOR_VERSION=$(tutor --version | cut -f3 -d' ')" >> $GITHUB_ENV
 
       - name: add custom theme
         uses: openedx-actions/tutor-plugin-build-openedx-add-theme@v1.0.0
         with:
-          repository: acl-openedx-theme
+          repository: acl-indigo-theme
           repository-organization: African-Cities-Lab
-          repository-ref: main
+          repository-ref: develop
           repository-token: ${{ secrets.GITHUB_TOKEN }}
 
       #------------------------------------------------------------------------
@@ -46,9 +64,64 @@ jobs:
       #     repository-organization: openedx
       #     repository-ref: master
 
-      - name: build openedx
-        uses: ./.github/actions/tutor-build
+      # - name: build openedx
+      #   uses: ./.github/actions/tutor-build
+      #   with:
+      #     image-name: ${{ github.repository }}
+      #     registry-username: ${{ github.actor }}
+      #     registry-password: ${{ secrets.GITHUB_TOKEN }}
+      - name: set up Docker Buildx
+        id: setup-docker
+        uses: docker/setup-buildx-action@v2
+
+      - name: initialize environment variables
+        id: init-env
+        shell: bash
+        run: |
+          echo "REPOSITORY_TAG_OPENEDX=$TUTOR_VERSION-$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
+          # echo "IMAGE_NAME=${{ github.repository }}" >> $GITHUB_ENV
+          echo "DOCKER_IMAGE_OPENEDX_REPOSITORY=${{ env.REGISTRY_URL }}/${{ github.actor }}/${{ env.IMAGE_NAME }}" >> $GITHUB_ENV
+
+      - name: render tutor config
+        id: tutor-config-save
+        shell: bash
+        run: |
+          tutor config save --set DOCKER_IMAGE_OPENEDX=${DOCKER_IMAGE_OPENEDX_REPOSITORY}:${REPOSITORY_TAG_OPENEDX}
+
+      - name: set tutor-dependent environment variables
+        shell: bash
+        run: |
+          echo "THEMES_PATH=$(tutor config printroot)/env/build/openedx/themes" >> $GITHUB_ENV
+          echo "PLUGINS_PATH=$(tutor config printroot)/env/build/openedx/requirements" >> $GITHUB_ENV
+
+      - name: ls the theme folder
+        id: ls-theme-folder
+        shell: bash
+        run: ls $THEMES_PATH -lha
+
+      - name: ls the requirements folder
+        id: ls-requirements-folder
+        shell: bash
+        run: ls $PLUGINS_PATH -lha
+
+      - name: login to GHCR
+        uses: docker/login-action@v2.0.0
         with:
-          image-name: ${{ github.repository }}
-          registry-username: ${{ github.actor }}
-          registry-password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ env.REGISTRY_URL }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: build the image
+        id: tutor-build-image
+        shell: bash
+        run: |
+          tutor images build openedx
+
+      - name: push the image
+        id: docker-push-image
+        shell: bash
+        run: |
+          tutor images push openedx
+          docker tag ${DOCKER_IMAGE_OPENEDX_REPOSITORY}:${REPOSITORY_TAG_OPENEDX} \
+              ${DOCKER_IMAGE_OPENEDX_REPOSITORY}:latest
+          docker push ${DOCKER_IMAGE_OPENEDX_REPOSITORY}:latest

@@ -115,7 +115,6 @@ resource "tfe_variable" "tutor_admin_password" {
 resource "tfe_variable" "tutor_admin_user" {
   key             = "tutor_admin_user"
   value           = var.tutor_admin_user
-  sensitive       = true
   category        = "terraform"
   variable_set_id = tfe_variable_set.base.id
 }
@@ -194,14 +193,14 @@ resource "tfe_variable" "droplet_size_prod" {
 
 ### "A" record which must be different for stage and prod
 resource "tfe_variable" "a_record_name_stage" {
-  key          = "a_record"
+  key          = "a_record_name"
   value        = var.a_record_name_stage
   category     = "terraform"
   workspace_id = tfe_workspace.stage.id
 }
 
 resource "tfe_variable" "a_record_name_prod" {
-  key          = "a_record"
+  key          = "a_record_name"
   value        = var.a_record_name_prod
   category     = "terraform"
   workspace_id = tfe_workspace.prod.id

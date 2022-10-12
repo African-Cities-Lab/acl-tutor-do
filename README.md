@@ -155,6 +155,16 @@ make destroy-base
 make destroy-meta
 ```
 
+## Notes
+
+The overall idea is:
+
+1. Terraform provides the infrastructure for each environment and runs the one-time tutor commands via cloud-init
+2. The build workflow uses GitHub Actions to build and push a Docker image to the GitHub container registry
+3. The deploy workflow uses the pushed image and deploys it to the droplet
+
+The GitHub workflows of steps 2 and 3 are triggered manually. Currently, the build workflow serves only to upgrade versions and/or to change the theme, whereas the deploy workflow serves to deploy more recent images built by the build workflow as well as to update some tutor settings. Ideally, the overall setup should move towards a fully GitOps declarative approach where the required parts build and deploy workflows are triggered to match changes in configuration files.
+
 ## Footnotes
 
 <a name="managing-workspaces-scale-factory">1</a>. ["Managing Workspaces With the TFE Provider at Scale Factory"](https://www.hashicorp.com/resources/managing-workspaces-with-the-tfe-provider-at-scale-factory)
