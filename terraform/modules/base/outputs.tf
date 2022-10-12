@@ -13,6 +13,11 @@ output "do_project_id" {
   value       = digitalocean_project.do_project.id
 }
 
+output "domain_name" {
+  description = "Name of the `digitalocean_domain`."
+  value       = digitalocean_domain.domain.name
+}
+
 output "gh_repo_name" {
   description = "Name of the `github_repository`."
   value       = data.github_repository.repo.name

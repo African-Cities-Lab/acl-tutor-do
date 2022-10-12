@@ -41,6 +41,16 @@ variable "do_project_id" {
   type        = string
 }
 
+variable "domain_name" {
+  description = "Domain pointing to DigitalOcean name servers."
+  type        = string
+}
+
+variable "a_record_name" {
+  description = "Hostname of the A record to the LMS."
+  type        = string
+}
+
 variable "gh_repo_name" {
   description = "Name of the `github_repository`."
   type        = string

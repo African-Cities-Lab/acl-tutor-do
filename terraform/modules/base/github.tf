@@ -33,6 +33,24 @@ resource "github_actions_secret" "droplet_user" {
   plaintext_value = var.droplet_user
 }
 
+resource "github_actions_secret" "smtp_password" {
+  repository      = data.github_repository.repo.name
+  secret_name     = "smtp_password"
+  plaintext_value = var.smtp_password
+}
+
+resource "github_actions_secret" "tutor_admin_password" {
+  repository      = data.github_repository.repo.name
+  secret_name     = "tutor_admin_password"
+  plaintext_value = var.tutor_admin_password
+}
+
+resource "github_actions_secret" "tutor_admin_user" {
+  repository      = data.github_repository.repo.name
+  secret_name     = "tutor_admin_user"
+  plaintext_value = var.tutor_admin_user
+}
+
 # # branches
 # ## required branches
 # # resource "github_branch" "main" {

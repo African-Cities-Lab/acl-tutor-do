@@ -41,11 +41,11 @@ runs:
         echo "TUTOR_VERSION=$(tutor --version | cut -f3 -d' ')" >> $GITHUB_ENV
         echo tutor root: $(tutor config printroot)
 
-    - name: load tutor settings
-      shell: bash
-      run: |-
-        echo "TUTOR_RUN_CADDY=false" >> $GITHUB_ENV
-        echo "TUTOR_RUN_NGINX=false" >> $GITHUB_ENV
+    # - name: load tutor settings
+    #   shell: bash
+    #   run: |-
+    #     echo "TUTOR_RUN_CADDY=false" >> $GITHUB_ENV
+    #     echo "TUTOR_RUN_NGINX=false" >> $GITHUB_ENV
 
     # - name: load additional tutor environment specific settings
     #   if: ${{ inputs.eks-namespace != 'UNASSIGNED' }}

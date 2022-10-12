@@ -17,3 +17,21 @@ resource "digitalocean_project_resources" "droplets" {
     digitalocean_droplet.droplet.urn
   ]
 }
+
+data "digitalocean_domain" "domain" {
+  name = var.domain_name
+}
+
+resource "digitalocean_record" "a" {
+  domain = data.digitalocean_domain.domain.name
+  name   = var.a_record_name # "courses"
+  type   = "A"
+  value  = digitalocean_droplet.droplet.ipv4_address
+}
+
+resource "digitalocean_record" "cname" {
+  domain = data.digitalocean_domain.domain.name
+  name   = "*.${var.a_record_name}" # "*.courses"
+  type   = "CNAME"
+  value  = "@"
+}

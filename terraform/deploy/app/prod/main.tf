@@ -21,6 +21,7 @@ module "app" {
   droplet_image  = var.droplet_image
   droplet_region = var.droplet_region
   droplet_size   = var.droplet_size
+  a_record_name  = var.a_record_name
 
   # do_ssh_key_id     = data.tfe_outputs.base.values.do_ssh_key_id
   # droplet_user_data = data.tfe_outputs.base.values.droplet_user_data
@@ -29,5 +30,6 @@ module "app" {
   do_ssh_key_id     = data.terraform_remote_state.base.outputs.do_ssh_key_id
   droplet_user_data = data.terraform_remote_state.base.outputs.droplet_user_data
   do_project_id     = data.terraform_remote_state.base.outputs.do_project_id
+  domain_name       = data.terraform_remote_state.base.outputs.domain_name
   gh_repo_name      = data.terraform_remote_state.base.outputs.gh_repo_name
 }
