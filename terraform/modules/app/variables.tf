@@ -3,6 +3,21 @@ variable "env" {
   type        = string
 }
 
+variable "ssh_key_name" {
+  description = "Name of the SSH key in DigitalOcean."
+  type        = string
+}
+
+variable "droplet_user" {
+  description = "Name of the user created for the `digitalocean_droplet`."
+  type        = string
+}
+
+variable "docker_compose_version" {
+  description = "Docker compose version string."
+  type        = string
+}
+
 variable "droplet_prefix" {
   description = "The prefix name of the `digitalocean_droplet`."
   type        = string
@@ -28,11 +43,6 @@ variable "droplet_size" {
 
 variable "do_ssh_key_id" {
   description = "ID of the `digitalocean_ssh_key`."
-  type        = string
-}
-
-variable "droplet_user_data" {
-  description = "User data for the `digitalocean_droplet`."
   type        = string
 }
 

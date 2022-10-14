@@ -1,10 +1,10 @@
-output "do_ssh_key_id" {
-  value = module.base.do_ssh_key_id
+output "do_ssh_key_name" {
+  value = module.base.do_ssh_key_name
 }
 
-output "droplet_user_data" {
-  value = module.base.droplet_user_data
-}
+# output "droplet_user_data" {
+#   value = module.base.droplet_user_data
+# }
 
 output "do_project_id" {
   value = module.base.do_project_id

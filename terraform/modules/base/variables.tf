@@ -3,16 +3,6 @@ variable "ssh_key_name" {
   type        = string
 }
 
-variable "droplet_user" {
-  description = "Name of the user created for the `digitalocean_droplet`."
-  type        = string
-}
-
-variable "docker_compose_version" {
-  description = "Docker compose version string."
-  type        = string
-}
-
 variable "do_project_name" {
   description = "The name of the `digitalocean_project`."
   type        = string

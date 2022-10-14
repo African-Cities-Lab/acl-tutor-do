@@ -46,20 +46,6 @@ resource "tfe_variable" "ssh_key_name" {
   variable_set_id = tfe_variable_set.base.id
 }
 
-resource "tfe_variable" "droplet_user" {
-  key             = "droplet_user"
-  value           = var.droplet_user
-  category        = "terraform"
-  variable_set_id = tfe_variable_set.base.id
-}
-
-resource "tfe_variable" "docker_compose_version" {
-  key             = "docker_compose_version"
-  value           = var.docker_compose_version
-  category        = "terraform"
-  variable_set_id = tfe_variable_set.base.id
-}
-
 resource "tfe_variable" "do_project_name" {
   key             = "do_project_name"
   value           = var.do_project_name
@@ -141,6 +127,20 @@ resource "tfe_variable" "tfc_org_name" {
 resource "tfe_variable" "tfc_base_workspace_name" {
   key             = "tfc_base_workspace_name"
   value           = tfe_workspace.base.name
+  category        = "terraform"
+  variable_set_id = tfe_variable_set.app.id
+}
+
+resource "tfe_variable" "droplet_user" {
+  key             = "droplet_user"
+  value           = var.droplet_user
+  category        = "terraform"
+  variable_set_id = tfe_variable_set.app.id
+}
+
+resource "tfe_variable" "docker_compose_version" {
+  key             = "docker_compose_version"
+  value           = var.docker_compose_version
   category        = "terraform"
   variable_set_id = tfe_variable_set.app.id
 }

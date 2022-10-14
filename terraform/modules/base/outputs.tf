@@ -1,11 +1,6 @@
-output "do_ssh_key_id" {
-  description = "ID of the `digitalocean_ssh_key`."
-  value       = digitalocean_ssh_key.ssh_key.id
-}
-
-output "droplet_user_data" {
-  description = "User data for the `digitalocean_droplet`."
-  value       = data.template_file.cloud-init-yaml.rendered
+output "do_ssh_key_name" {
+  description = "Name of the `digitalocean_ssh_key`."
+  value       = digitalocean_ssh_key.ssh_key.name
 }
 
 output "do_project_id" {
@@ -24,6 +19,6 @@ output "gh_repo_name" {
 }
 
 output "ssh_key" {
-  description = "Private key."
+  description = "SSH private key."
   value       = tls_private_key.ssh_key
 }

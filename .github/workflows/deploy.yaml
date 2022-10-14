@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: stage
     env:
-      ENVIRONMENT_ID: stage
+      # ENVIRONMENT_ID: stage
       REGISTRY_URL: ghcr.io
       IMAGE_NAME: openedx
       SMTP_EMAIL: contact@africancitieslab.org
@@ -45,8 +45,8 @@ jobs:
           # echo "TUTOR_LMS_HOST=$LMS_HOSTNAME" >> $GITHUB_ENV
           # echo "TUTOR_CMS_HOST=$CMS_HOSTNAME" >> $GITHUB_ENV
           # TODO: DRY this
-          echo "TUTOR_LMS_HOST=courses-staging.africancitieslab.org" >> $GITHUB_ENV
-          echo "TUTOR_CMS_HOST=studio.courses-staging.africancitieslab.org" >> $GITHUB_ENV
+          # echo "TUTOR_LMS_HOST=courses-staging.africancitieslab.org" >> $GITHUB_ENV
+          # echo "TUTOR_CMS_HOST=studio.courses-staging.africancitieslab.org" >> $GITHUB_ENV
           echo "DOCKER_IMAGE_OPENEDX=${{ env.REGISTRY_URL }}/${{ github.actor }}/${{ env.IMAGE_NAME }}" >> $GITHUB_ENV
           # echo "OPENEDX_COMMON_VERSION=open-release/nutmeg.2" >> $GITHUB_ENV
 
@@ -66,15 +66,15 @@ jobs:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.SSH_KEY }}
-          envs: TUTOR_LMS_HOST,TUTOR_CMS_HOST,DOCKER_IMAGE_OPENEDX,SMTP_EMAIL,${{ secrets.SMTP_PASSWORD }}
+          envs: DOCKER_IMAGE_OPENEDX,SMTP_EMAIL,${{ secrets.SMTP_PASSWORD }}
           script: |
             # add tutor dir to path
             PATH=$PATH:~/.local/bin
             # config backend variables
             tutor config save \
-                --set LMS_HOSTNAME=${TUTOR_LMS_HOST} \
-                --set CMS_HOSTNAME=${TUTOR_CMS_HOST} \
-                --set ENABLE_HTTPS=true \
+                # --set LMS_HOSTNAME=${TUTOR_LMS_HOST} \
+                # --set CMS_HOSTNAME=${TUTOR_CMS_HOST} \
+                # --set ENABLE_HTTPS=true \
                 --set DOCKER_IMAGE_OPENEDX=${DOCKER_IMAGE_OPENEDX} \
                 --set OPENEDX_COMMON_VERSION=open-release/nutmeg.2 \
                 --set SMTP_HOST=smtp.porkbun.com \
