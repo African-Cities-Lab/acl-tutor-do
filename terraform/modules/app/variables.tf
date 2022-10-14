@@ -41,11 +41,6 @@ variable "droplet_size" {
   default     = "s-2vcpu-4gb"
 }
 
-variable "do_ssh_key_id" {
-  description = "ID of the `digitalocean_ssh_key`."
-  type        = string
-}
-
 variable "do_project_id" {
   description = "ID of the `digitalocean_project`."
   type        = string

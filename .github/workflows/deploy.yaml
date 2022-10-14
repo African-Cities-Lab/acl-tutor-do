@@ -74,7 +74,7 @@ jobs:
             tutor config save \
                 # --set LMS_HOSTNAME=${TUTOR_LMS_HOST} \
                 # --set CMS_HOSTNAME=${TUTOR_CMS_HOST} \
-                # --set ENABLE_HTTPS=true \
+                --set ENABLE_HTTPS=true \
                 --set DOCKER_IMAGE_OPENEDX=${DOCKER_IMAGE_OPENEDX} \
                 --set OPENEDX_COMMON_VERSION=open-release/nutmeg.2 \
                 --set SMTP_HOST=smtp.porkbun.com \

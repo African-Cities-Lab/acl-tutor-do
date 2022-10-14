@@ -22,8 +22,6 @@ resource "digitalocean_droplet" "droplet" {
     data.digitalocean_ssh_key.ssh_key.id
   ]
   user_data = data.template_file.cloud-init-yaml.rendered
-  depends_on = [
-  ]
 }
 
 resource "digitalocean_project_resources" "droplets" {

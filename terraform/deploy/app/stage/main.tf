@@ -31,7 +31,7 @@ module "app" {
   # gh_repo_name      = data.tfe_outputs.base.values.gh_repo_name
   # do_ssh_key_id = data.terraform_remote_state.base.outputs.do_ssh_key_id
   # droplet_user_data = data.terraform_remote_state.base.outputs.droplet_user_data
-  ssh_key_name  = data.terraform_remote_state.outputs.do_ssh_key_name
+  ssh_key_name  = data.terraform_remote_state.base.outputs.do_ssh_key_name
   do_project_id = data.terraform_remote_state.base.outputs.do_project_id
   domain_name   = data.terraform_remote_state.base.outputs.domain_name
   gh_repo_name  = data.terraform_remote_state.base.outputs.gh_repo_name

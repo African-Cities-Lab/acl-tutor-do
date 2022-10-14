@@ -39,15 +39,16 @@ runcmd:
   - apt install -y python3 python3-pip libyaml-dev
   - pip install --upgrade pyyaml
   # install tutor and plugins
-  - pip install --no-input tutor tutor-discovery tutor-xqueue tutor-forum
+  - pip install --no-input tutor tutor-discovery tutor-xqueue tutor-forum tutor-me
   - tutor plugins enable discovery
   - tutor plugins enable xqueue
   - tutor plugins enable forum
-  - tutor config save  --set LANGUAGE_CODE=en --set PLATFORM_NAME="African Cities Lab" --set CONTACT_EMAIL=contact@africancitieslab.org --set LMS_HOSTNAME=${lms_hostname} --set CMS_HOSTNAME=${cms_hostname} --set ENABLE_HTTPS=true
+  - tutor plugins enable mfe
+  - tutor config save --set LANGUAGE_CODE=en --set PLATFORM_NAME="African Cities Lab" --set CONTACT_EMAIL=contact@africancitieslab.org --set LMS_HOST=${lms_hostname} --set CMS_HOST=${cms_hostname}
   # start tutor
-  - tutor local start -d
+  # - tutor local start -d
   # servicie initialization
-  - tutor local init
+  # - tutor local init
   # TODO: create super user (how to hide password from cloud-init logs?)
   # enable multi language support
-  - tutor local run lms ./manage.py lms shell -c "from openedx.core.djangoapps.dark_lang.models import DarkLangConfig; DarkLangConfig.objects.create(enabled=True, released_languages='fr,en')"
+  # - tutor local run lms ./manage.py lms shell -c "from openedx.core.djangoapps.dark_lang.models import DarkLangConfig; DarkLangConfig.objects.create(enabled=True, released_languages='fr,en')"
