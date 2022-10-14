@@ -131,13 +131,6 @@ resource "tfe_variable" "tfc_base_workspace_name" {
   variable_set_id = tfe_variable_set.app.id
 }
 
-resource "tfe_variable" "droplet_user" {
-  key             = "droplet_user"
-  value           = var.droplet_user
-  category        = "terraform"
-  variable_set_id = tfe_variable_set.app.id
-}
-
 resource "tfe_variable" "docker_compose_version" {
   key             = "docker_compose_version"
   value           = var.docker_compose_version
@@ -225,6 +218,13 @@ resource "tfe_variable" "gh_token" {
   key             = "gh_token"
   value           = var.gh_token
   sensitive       = true
+  category        = "terraform"
+  variable_set_id = tfe_variable_set.shared.id
+}
+
+resource "tfe_variable" "droplet_user" {
+  key             = "droplet_user"
+  value           = var.droplet_user
   category        = "terraform"
   variable_set_id = tfe_variable_set.shared.id
 }

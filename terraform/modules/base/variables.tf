@@ -28,6 +28,11 @@ variable "tf_api_token" {
   type        = string
 }
 
+variable "droplet_user" {
+  description = "Name of the user created for the `digitalocean_droplet`."
+  type        = string
+}
+
 variable "smtp_password" {}
 
 variable "tutor_admin_password" {}
