@@ -39,7 +39,7 @@ runcmd:
   - apt install -y python3 python3-pip libyaml-dev
   - pip install --upgrade pyyaml
   # install tutor and plugins
-  - pip install --no-input tutor tutor-discovery tutor-xqueue tutor-forum tutor-me
+  - pip install --no-input tutor tutor-discovery tutor-xqueue tutor-forum tutor-mfe
   - tutor plugins enable discovery
   - tutor plugins enable xqueue
   - tutor plugins enable forum
