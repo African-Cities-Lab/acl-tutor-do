@@ -165,6 +165,19 @@ The overall idea is:
 
 The GitHub workflows of steps 2 and 3 are triggered manually. Currently, the build workflow serves only to upgrade versions and/or to change the theme, whereas the deploy workflow serves to deploy more recent images built by the build workflow as well as to update some tutor settings. Ideally, the overall setup should move towards a fully GitOps declarative approach where the required parts build and deploy workflows are triggered to match changes in configuration files.
 
+TODO: fix tutor config save + tutor init in cloud-init.yaml
+
+### Custom plugins
+
+```bash
+mkdir -p "$(tutor plugins printroot)"
+mv plugins/{plugin}.py "$(tutor plugins printroot)"
+# tutor plugins list (to see that the plugin `{plugin}` appears)
+tutor plugins enable {plugin}
+tutor config save
+tutor local restart
+```
+
 ## Footnotes
 
 <a name="managing-workspaces-scale-factory">1</a>. ["Managing Workspaces With the TFE Provider at Scale Factory"](https://www.hashicorp.com/resources/managing-workspaces-with-the-tfe-provider-at-scale-factory)
