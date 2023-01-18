@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           pip install --upgrade pyyaml
-          pip install tutor
+          pip install https://github.com/overhangio/tutor/archive/refs/heads/master.zip
           # pip install tutor-discovery
           # tutor plugins enable discovery
           tutor config save
