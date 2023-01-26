@@ -166,6 +166,7 @@ The overall idea is:
 The GitHub workflows of steps 2 and 3 are triggered manually. Currently, the build workflow serves only to upgrade versions and/or to change the theme, whereas the deploy workflow serves to deploy more recent images built by the build workflow as well as to update some tutor settings. Ideally, the overall setup should move towards a fully GitOps declarative approach where the required parts build and deploy workflows are triggered to match changes in configuration files.
 
 TODO: fix tutor config save + tutor init in cloud-init.yaml
+TODO: `pip install tutor-mfe` in cloud-init?
 
 ### Custom plugins
 
