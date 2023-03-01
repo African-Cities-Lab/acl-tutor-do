@@ -61,7 +61,7 @@ jobs:
         run: ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> ~/.ssh/known_hosts
 
       - name: config DigitalOcean droplet via SSH action
-        uses: appleboy/ssh-action@v0.1.5
+        uses: appleboy/ssh-action@v0.1.8
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
@@ -89,7 +89,7 @@ jobs:
             tutor local settheme acl-indigo-theme
 
       - name: print config from DigitalOcean droplet via SSH action
-        uses: appleboy/ssh-action@v0.1.5
+        uses: appleboy/ssh-action@v0.1.8
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
@@ -127,7 +127,7 @@ jobs:
             cat -n $(tutor config printroot)/env/apps/openedx/config/cms.env.yml
 
       - name: deploy tutor via SSH action
-        uses: appleboy/ssh-action@v0.1.5
+        uses: appleboy/ssh-action@v0.1.8
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
