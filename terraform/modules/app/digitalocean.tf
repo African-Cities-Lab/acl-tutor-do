@@ -22,6 +22,15 @@ resource "digitalocean_droplet" "droplet" {
     data.digitalocean_ssh_key.ssh_key.id
   ]
   user_data = data.template_file.cloud-init-yaml.rendered
+
+  lifecycle {
+    ignore_changes = [
+      image,
+      size,
+      ssh_keys,
+      user_data
+    ]
+  }
 }
 
 resource "digitalocean_project_resources" "droplets" {
