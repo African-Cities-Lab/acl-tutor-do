@@ -88,6 +88,16 @@ jobs:
         run: |
           tutor config save --set DOCKER_IMAGE_OPENEDX=${DOCKER_IMAGE_OPENEDX_REPOSITORY}:${REPOSITORY_TAG_OPENEDX}
 
+      - name: install and enable codejail plugin
+        id: tutor-codejail-plugin
+        shell: bash
+        run: |
+          pip install git+https://github.com/edunext/tutor-contrib-codejail@v18.0.0
+          tutor plugins enable codejail
+          tutor config save
+          # run the initialization jobs to install the required AppArmor profile
+          tutor local do init --limit codejail
+
       - name: set tutor-dependent environment variables
         shell: bash
         run: |
@@ -99,10 +109,10 @@ jobs:
         shell: bash
         run: ls $THEMES_PATH -lha
 
-      - name: ls the requirements folder
-        id: ls-requirements-folder
-        shell: bash
-        run: ls $PLUGINS_PATH -lha
+      # - name: ls the requirements folder
+      #   id: ls-requirements-folder
+      #   shell: bash
+      #   run: ls $PLUGINS_PATH -lha
 
       - name: login to GHCR
         uses: docker/login-action@v2.0.0
