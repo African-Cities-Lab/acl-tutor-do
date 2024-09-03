@@ -179,6 +179,87 @@ tutor config save
 tutor local restart
 ```
 
+### Codejail plugin
+
+To avoid a `No such file or directory: ‘TMPDIR=tmp` error (see https://discuss.overhang.io/t/errno-2-no-such-file-or-directory-tmpdir-tmp/1877/6), we install:
+
+https://github.com/eduNEXT/tutor-contrib-codejail
+
+### Manual deployment via ssh
+
+**This is the current approach**. We use terraform to provide the infrastructure and then deploy tutor by running commands in the server via ssh. Note that `{env}` can be either `stage` or `prod`.
+
+#### 1. Provision the infrastructure
+
+This is quite straight-forward and follows the terraform init, plan and apply scheme:
+
+``` bash
+make init-{env}
+# make plan-{env}
+make apply-{env}
+```
+
+At this point, a series of commands to install docker, tutor and other requirements will run via cloud-init in the created droplet.
+
+#### 2. Initial commands
+
+First of all, ssh into the server:
+
+``` bash
+make ssh-{env}
+```
+
+The reminder assumes that the commands are run from the server (via ssh). While the server will be ready as soon as `make apply-{env}` finishes, the initial commands running via cloud-init can take a while to complete. You can follow its status by running
+
+``` bash
+sudo tail /var/log/cloud-init-output.log
+```
+
+##### TODO: customization
+
+###### Multi-language
+
+Follow the steps at https://discuss.overhang.io/t/howto-enable-multiple-languages-for-your-open-edx-platform/140
+
+###### Theme
+
+Usually we work with a custom openedx image built via GitHub Actions that should include our custom theme at [github.com/African-Cities-Lab/acl-indigo-theme.git](https://github.com/African-Cities-Lab/acl-indigo-theme.git), but we still need to figure out how it works exactly. TODO: try
+
+``` bash
+tutor config save --set DOCKER_IMAGE_OPENEDX=ghcr.io/martibosch/openedx:{tag}
+git clone -b develop https://github.com/African-Cities-Lab/acl-indigo-theme.git \
+  "$(tutor config printroot)/env/build/openedx/themes"
+tutor images build openedx
+tutor images push openedx
+tutor local do settheme acl-indigo-theme
+tutor local launch -I
+```
+###### SMTP
+
+``` bash
+tutor config save --set SMTP_HOST=in-v3.mailjet.com --set SMTP_USERNAME={smtp-username} --set SMTP_PASSWORD={smtp-password} --set SMTP_PORT=587 --set SMTP_USE_SSL=false --set SMTP_USE_TLS=true
+```
+###### Plugins
+
+TODO: improve version-control of plugins and add some sort of requirements.txt
+
+Note that the customized MFE brand is handled by the `custommfebrand` plugin, which installs the `brand-openedx` npm package from [github.com/African-Cities-Lab/brand-openedx.git](https://github.com/African-Cities-Lab/brand-openedx.git).
+
+###### Custom translations
+
+TODO: version-control customized translation translations
+
+``` bash
+mkdir .local/share/tutor/env/plugins/mfe/build/mfe/i18n/authn
+nano .local/share/tutor/env/plugins/mfe/build/mfe/i18n/authn/fr.json
+```
+
+##### Create a super user
+
+``` bash
+tutor local do createuser --staff --superuser yourusername user@email.com
+```
+
 ## Footnotes
 
 <a name="managing-workspaces-scale-factory">1</a>. ["Managing Workspaces With the TFE Provider at Scale Factory"](https://www.hashicorp.com/resources/managing-workspaces-with-the-tfe-provider-at-scale-factory)
